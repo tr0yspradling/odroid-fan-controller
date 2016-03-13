@@ -34,10 +34,10 @@ def main(argv):
           status()
 def status():
     print "Fan Speed: {0}%".format(getfanspeed())
-    print "Fan Mode: {0}".format(getfanmode())
+    print "Fan Mode: {0}".format(getfanmode(str=True))
 def setfanspeed(speed):
     # check fan mode
-    if getfanmode() == 'manual':
+    if getfanmode(str=True) == 'manual':
         if speed < 25:
             print 'Fan power below 25% causes a malfunction with the odroid fan. Returning.'
             return
@@ -46,27 +46,42 @@ def setfanspeed(speed):
         writetofile(odroid_pwm_duty_file, speed)
     elif getfanmode() == 'auto':
         print 'Fan Mode set to "auto".\r\nPlease set to "manual" and try again.'
-def setfanmode(mode):
-    if mode == "auto":
-        mode == 1
-    elif mode == "manual":
-        mode == 0
-
-    if mode is '1' or mode is '0':
-        if getfanmode() == mode:
-            print 'Fan mode already set to {0}'.format(mode)
-        writetofile(odroid_fan_mode_file, mode)
+def setfanmode(fanmode):
+    _mode = fanmode
+    if(_mode == 'auto'):
+        _mode = '1'
+    elif(_mode == 'manual'):
+        _mode = '0'
+    print '_mode: {0}'.format(_mode)
+    if (_mode == '1') or (_mode == '0'):
+        print 'getfanmode(str=False): {0}'.format(getfanmode(str=False))
+        if getfanmode(str=False) == _mode:
+            print 'Fan mode already set to {0}'.format(fanmode)
+            return
+        writetofile(odroid_fan_mode_file, _mode)
+        print '_mode: {0} written to {1}'.format(_mode, odroid_fan_mode_file)
+        print 'getfanmode(str=False)(after write): {0}'.format(getfanmode(str=False))
     else:
         print 'Invalid mode: {0}'.format(mode)
-def getfanmode():
+def getfanmode(str=True):
+
+    def number(mode):
+        return '1' if 'auto' in mode else 'manual'
+
     mode = readfile(odroid_fan_mode_file)
     odroid_fan_mode = 'manual' if 'manual' in mode else 'auto'
-    return odroid_fan_mode
+    if str:
+        return odroid_fan_mode
+    else:
+        return number(odroid_fan_mode)
+
+
 def getfanspeed():
     odroid_fan_speed = (float(readfile(odroid_pwm_duty_file)) / 2.55)
     if int(odroid_fan_speed) == 0:
         odroid_fan_speed = 0
     return odroid_fan_speed
+
 def writetofile(filePath, data):
     filePath = os.path.join(odroid_device_path, filePath)
     with open(filePath, 'w') as dataFile:
